@@ -38,6 +38,9 @@ class Canvas(QtWidgets.QLabel):
         y = int(y / scaled_height * original_height)
         return x, y
 
+    def get_target_color(self):
+        return self.parent().parent().palette.active_color
+
     def updateScaledPixmap(self):
         # TODO: fix disappearance of all drawings after window resize
         self.scaled_pixmap = self.original_pixmap.scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
@@ -56,12 +59,12 @@ class Canvas(QtWidgets.QLabel):
             distance = ((self.prev_x - x)**2 + (self.prev_y - y)**2) ** 0.5
         if distance is not None:
             print('Move distance: {:.1f}'.format(distance))
-        THRESHOLD = 7.0
+        THRESHOLD = self.brush_size / 2
         if distance is not None and distance >= THRESHOLD:
             intermediate_points = np.linspace([self.prev_x, self.prev_y], [x, y], int(distance / THRESHOLD)+2).tolist()[1:-1]
             for inter_x, inter_y in intermediate_points:
-                self.draw_point(int(inter_x), int(inter_y), 10, 10, 10)
-        self.draw_point(x, y, 10, 10, 10)
+                self.draw_point(int(inter_x), int(inter_y), self.get_target_color())
+        self.draw_point(x, y, self.get_target_color())
 
         self.prev_x = x
         self.prev_y = y
@@ -75,7 +78,7 @@ class Canvas(QtWidgets.QLabel):
         x, y = self.getImageCoords(e)
         if x is None:
             return
-        self.draw_point(x, y, 10, 10, 10)
+        self.draw_point(x, y, self.get_target_color())
         self.prev_x = x
         self.prev_y = y
         self.update()
@@ -88,7 +91,7 @@ class Canvas(QtWidgets.QLabel):
         self.updateScaledPixmap()
         self.update()
 
-    def draw_point(self, center_x, center_y, red, green, blue):
+    def draw_point(self, center_x, center_y, target_color):
         image = self.original_pixmap.toImage()
         WIDTH = image.size().width()
         HEIGHT = image.size().height()
@@ -115,9 +118,9 @@ class Canvas(QtWidgets.QLabel):
                 strength *= max_strength_multiplier
                 if not 0 <= strength <= 1:
                     print(strength)
-                new_r = int(old_color.red()*(1-strength) + red*strength)
-                new_g = int(old_color.green()*(1-strength) + green*strength)
-                new_b = int(old_color.blue()*(1-strength) + blue*strength)
+                new_r = int(old_color.red()*(1-strength) + target_color.red()*strength)
+                new_g = int(old_color.green()*(1-strength) + target_color.green()*strength)
+                new_b = int(old_color.blue()*(1-strength) + target_color.blue()*strength)
                 image.setPixelColor(x, y, QtGui.QColor(new_r, new_g, new_b))
         self.original_pixmap = QtGui.QPixmap.fromImage(image)
         self.updateScaledPixmap()

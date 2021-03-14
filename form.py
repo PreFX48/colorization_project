@@ -9,7 +9,6 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from draw import Canvas
 
 
 class Ui_MainWindow(object):
@@ -80,14 +79,10 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.pushButton_11, 1, 0, 1, 1)
         self.verticalLayout_2.addLayout(self.gridLayout)
         self.verticalLayout.addLayout(self.verticalLayout_2)
-        self.frame = QtWidgets.QFrame(self.horizontalLayoutWidget)
-        self.frame.setFrameShape(QtWidgets.QFrame.NoFrame)
-        self.frame.setObjectName("frame")
-        self.label_10 = QtWidgets.QLabel(self.frame)
-        self.label_10.setGeometry(QtCore.QRect(100, 10, 111, 16))
-        self.label_10.setFrameShape(QtWidgets.QFrame.NoFrame)
-        self.label_10.setObjectName("label_10")
-        self.verticalLayout.addWidget(self.frame)
+        self.palette = Palette(self.horizontalLayoutWidget)
+        self.palette.setMinimumSize(QtCore.QSize(50, 50))
+        self.palette.setObjectName("palette")
+        self.verticalLayout.addWidget(self.palette)
         self.gridLayout_2 = QtWidgets.QGridLayout()
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.brush_opacity_input = QtWidgets.QLineEdit(self.horizontalLayoutWidget)
@@ -134,6 +129,8 @@ class Ui_MainWindow(object):
         self.gridLayout_2.setColumnMinimumWidth(1, 100)
         self.gridLayout_2.setColumnStretch(1, 1)
         self.verticalLayout.addLayout(self.gridLayout_2)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout.addItem(spacerItem)
         self.horizontalLayout_7 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_7.setObjectName("horizontalLayout_7")
         self.label_8 = QtWidgets.QLabel(self.horizontalLayoutWidget)
@@ -161,12 +158,13 @@ class Ui_MainWindow(object):
         self.raw_image.setAlignment(QtCore.Qt.AlignCenter)
         self.raw_image.setObjectName("raw_image")
         self.horizontalLayout.addWidget(self.raw_image)
-        self.colorized_image = QtWidgets.QLabel(self.horizontalLayoutWidget)
+        self.colorized_image = Canvas(self.horizontalLayoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(1)
         sizePolicy.setHeightForWidth(self.colorized_image.sizePolicy().hasHeightForWidth())
         self.colorized_image.setSizePolicy(sizePolicy)
+        self.colorized_image.setMinimumSize(QtCore.QSize(100, 100))
         self.colorized_image.setAlignment(QtCore.Qt.AlignCenter)
         self.colorized_image.setObjectName("colorized_image")
         self.horizontalLayout.addWidget(self.colorized_image)
@@ -195,7 +193,6 @@ class Ui_MainWindow(object):
         self.pushButton_4.setText(_translate("MainWindow", "D"))
         self.pushButton_10.setText(_translate("MainWindow", "A"))
         self.pushButton_11.setText(_translate("MainWindow", "E"))
-        self.label_10.setText(_translate("MainWindow", "<PALETTE>"))
         self.brush_opacity_input.setText(_translate("MainWindow", "100"))
         self.brush_hardness_input.setText(_translate("MainWindow", "90"))
         self.label_6.setText(_translate("MainWindow", "Hardness"))
@@ -208,3 +205,5 @@ class Ui_MainWindow(object):
         self.pushButton.setText(_translate("MainWindow", "SAVE"))
         self.raw_image.setText(_translate("MainWindow", "raw_image"))
         self.colorized_image.setText(_translate("MainWindow", "colorized_image"))
+from canvas import Canvas
+from palette import Palette

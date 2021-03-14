@@ -31,7 +31,7 @@
      <number>5</number>
     </property>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0,0,0">
+     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0,0,0,0">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
@@ -150,26 +150,13 @@
        </layout>
       </item>
       <item>
-       <widget class="QFrame" name="frame">
-        <property name="frameShape">
-         <enum>QFrame::NoFrame</enum>
+       <widget class="Palette" name="palette" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>50</height>
+         </size>
         </property>
-        <widget class="QLabel" name="label_10">
-         <property name="geometry">
-          <rect>
-           <x>100</x>
-           <y>10</y>
-           <width>111</width>
-           <height>16</height>
-          </rect>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
-         </property>
-         <property name="text">
-          <string>&lt;PALETTE&gt;</string>
-         </property>
-        </widget>
        </widget>
       </item>
       <item>
@@ -273,6 +260,19 @@
        </layout>
       </item>
       <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_7">
         <item>
          <widget class="QLabel" name="label_8">
@@ -310,7 +310,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QLabel" name="raw_image">
+     <widget class="Canvas" name="raw_image">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>1</horstretch>
@@ -332,12 +332,18 @@
      </widget>
     </item>
     <item>
-     <widget class="QLabel" name="colorized_image">
+     <widget class="Canvas" name="colorized_image">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>1</horstretch>
         <verstretch>1</verstretch>
        </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>100</width>
+        <height>100</height>
+       </size>
       </property>
       <property name="text">
        <string>colorized_image</string>
@@ -350,6 +356,19 @@
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Canvas</class>
+   <extends>QLabel</extends>
+   <header>canvas.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Palette</class>
+   <extends>QWidget</extends>
+   <header>palette.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
