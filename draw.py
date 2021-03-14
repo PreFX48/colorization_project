@@ -2,6 +2,7 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 import numpy as np
+import time
 
 
 class Canvas(QtWidgets.QLabel):
@@ -11,6 +12,11 @@ class Canvas(QtWidgets.QLabel):
         self.updateScaledPixmap()
         self.prev_x = None
         self.prev_y = None
+        self.prev_event_start_time = None
+        self.prev_event_end_time = None
+        self.brush_size = 20
+        self.brush_opacity = 50
+        self.brush_hardness = 50
 
     def getImageCoords(self, event):
         x, y = event.x(), event.y()
@@ -38,6 +44,9 @@ class Canvas(QtWidgets.QLabel):
         self.setPixmap(self.scaled_pixmap)
 
     def mouseMoveEvent(self, e):
+        event_time = time.time()
+        if self.prev_event_end_time:
+            print('prev_end->new_start: {:.2f} msec'.format((event_time-self.prev_event_end_time)*1000))
         x, y = self.getImageCoords(e)
         if x is None:
             return
@@ -46,10 +55,10 @@ class Canvas(QtWidgets.QLabel):
         else:
             distance = ((self.prev_x - x)**2 + (self.prev_y - y)**2) ** 0.5
         if distance is not None:
-            print(distance)
+            print('Move distance: {:.1f}'.format(distance))
         THRESHOLD = 7.0
         if distance is not None and distance >= THRESHOLD:
-            intermediate_points = np.linspace([self.prev_x, self.prev_y], [x, y], int(distance / THRESHOLD)).tolist()[1:-1]
+            intermediate_points = np.linspace([self.prev_x, self.prev_y], [x, y], int(distance / THRESHOLD)+2).tolist()[1:-1]
             for inter_x, inter_y in intermediate_points:
                 self.draw_point(int(inter_x), int(inter_y), 10, 10, 10)
         self.draw_point(x, y, 10, 10, 10)
@@ -57,6 +66,10 @@ class Canvas(QtWidgets.QLabel):
         self.prev_x = x
         self.prev_y = y
         self.update()
+        event_end_time = time.time()
+        print('start->end: {:.2f} msec'.format((event_end_time-event_time)*1000))
+        self.prev_event_start_time = event_time
+        self.prev_event_end_time = event_end_time
 
     def mousePressEvent(self, e):
         x, y = self.getImageCoords(e)
@@ -79,7 +92,7 @@ class Canvas(QtWidgets.QLabel):
         image = self.original_pixmap.toImage()
         WIDTH = image.size().width()
         HEIGHT = image.size().height()
-        radius = 15
+        radius = self.brush_size
         for x in range(center_x-radius, center_x+radius):
             if not (0 <= x < WIDTH):
                 continue
@@ -91,9 +104,12 @@ class Canvas(QtWidgets.QLabel):
                     continue
                 old_color = image.pixelColor(x, y)
                 # brush parameters
-                max_strength_multiplier = 0.5
-                inner_boundary = 0.5  # (center_y / HEIGHT)  # 0.5 is OK
-                steepness = 0.9  # (center_x / WIDTH * 2)  # 0.9 is OK
+                # max_strength_multiplier = 0.5
+                max_strength_multiplier = self.brush_opacity / 100
+                # inner_boundary = 0.5  # (center_y / HEIGHT)  # 0.5 is OK
+                inner_boundary = min(0.99, max(0.01, self.brush_hardness / 100))
+                # steepness = 0.9  # (center_x / WIDTH * 2)  # 0.9 is OK
+                steepness = min(0.99, max(0.01, self.brush_hardness / 100))  # 0.9 is OK
                 # ----------------
                 strength = 1 - (max(0, distance/radius-inner_boundary)/(1-inner_boundary)) ** steepness
                 strength *= max_strength_multiplier
