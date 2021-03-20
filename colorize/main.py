@@ -116,11 +116,10 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
             self.colorized_image.reload_pixmap(QtGui.QPixmap(qimage2ndarray.array2qimage(np.zeros(shape=(256, 256, 3)))))
 
     def colorize(self):
-        arr = qimage2ndarray.rgb_view(self.raw_image.original_pixmap.toImage(), byteorder='big').copy()
+        arr = qimage2ndarray.rgb_view(self.raw_image.fullsize_pixmap.toImage(), byteorder='big').copy()
         arr[:, :, 0] -= np.minimum(arr[:, :, 0], 20)
         arr[:, :, 2] -= np.minimum(arr[:, :, 2], 20)
-        self.colorized_image.original_pixmap = QtGui.QPixmap(qimage2ndarray.array2qimage(arr))
-        self.colorized_image.updateScaledPixmap()
+        self.colorized_image.reload_pixmap(QtGui.QPixmap(qimage2ndarray.array2qimage(arr)))
 
     def save(self):
         current_image_name = self.raw_images_list[self.current_image_idx]
@@ -129,7 +128,7 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
             os.makedirs(save_folder)
 
         save_path = os.path.join(save_folder, current_image_name)
-        image = self.colorized_image.original_pixmap.toImage()
+        image = self.colorized_image.fullsize_pixmap.toImage()
         image.save(save_path)
 
     def set_edit_mode(self, new_mode):

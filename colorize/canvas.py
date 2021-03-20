@@ -12,6 +12,7 @@ class Canvas(QtWidgets.QLabel):
         super().__init__(*args, **kwargs)
         black_image = qimage2ndarray.array2qimage(np.zeros(shape=(256, 256, 3)))
         self.original_pixmap = QtGui.QPixmap(black_image)
+        self.fullsize_pixmap = self.original_pixmap.copy()
         self.updateScaledPixmap()
         self.prev_x = None
         self.prev_y = None
@@ -24,12 +25,13 @@ class Canvas(QtWidgets.QLabel):
     def reload_pixmap(self, pixmap):
         if not isinstance(pixmap, QtGui.QPixmap):
             pixmap = QtGui.QPixmap(pixmap)
-        self.original_pixmap = pixmap
+        self.original_pixmap = pixmap.copy()
+        self.fullsize_pixmap = pixmap.copy()
         self.updateScaledPixmap()
 
     def get_image_coords(self, event):
         x, y = event.x(), event.y()
-        original_size = self.original_pixmap.size()
+        original_size = self.fullsize_pixmap.size()
         original_width = original_size.width()
         original_height = original_size.height()
         scaled_size = self.scaled_pixmap.size()
@@ -53,7 +55,7 @@ class Canvas(QtWidgets.QLabel):
 
     def updateScaledPixmap(self):
         # TODO: fix disappearance of all drawings after window resize
-        self.scaled_pixmap = self.original_pixmap.scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        self.scaled_pixmap = self.fullsize_pixmap.scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self.setPixmap(self.scaled_pixmap)
 
     def mouseMoveEvent(self, e):
@@ -69,13 +71,13 @@ class Canvas(QtWidgets.QLabel):
             distance = ((self.prev_x - x)**2 + (self.prev_y - y)**2) ** 0.5
         if distance is not None:
             print('Move distance: {:.1f}'.format(distance))
-        if self.edit_mode == 'brush':
+        if self.edit_mode in ('brush', 'eraser'):
             THRESHOLD = self.brush_size / 2
             if distance is not None and distance >= THRESHOLD:
                 intermediate_points = np.linspace([self.prev_x, self.prev_y], [x, y], int(distance / THRESHOLD)+2).tolist()[1:-1]
                 for inter_x, inter_y in intermediate_points:
-                    self.draw_point(int(inter_x), int(inter_y))
-            self.draw_point(x, y)
+                    self.draw_point(int(inter_x), int(inter_y), erase=(self.edit_mode == 'eraser'))
+            self.draw_point(x, y, erase=(self.edit_mode == 'eraser'))
 
         self.prev_x = x
         self.prev_y = y
@@ -107,17 +109,20 @@ class Canvas(QtWidgets.QLabel):
             self.draw_point(x, y)
         elif self.edit_mode == 'colorpicker':
             self.pick_color(x, y)
+        elif self.edit_mode == 'eraser':
+            self.draw_point(x, y, erase=True)
         else:
             raise RuntimeError('Unknown edit_mode: {}'.format(self.edit_mode))
 
     def pick_color(self, x, y):
-        image = self.original_pixmap.toImage()
+        image = self.fullsize_pixmap.toImage()
         new_color = image.pixelColor(x, y)
         self.parent().parent().palette.get_active_color_widget().set_color(new_color)
 
-    def draw_point(self, center_x, center_y):
-        target_color = self.get_target_color()
-        image = self.original_pixmap.toImage()
+    def draw_point(self, center_x, center_y, erase=False):
+        if not erase:
+            target_color = self.get_target_color()
+        image = self.fullsize_pixmap.toImage()
         WIDTH = image.size().width()
         HEIGHT = image.size().height()
         radius = self.brush_size
@@ -127,6 +132,8 @@ class Canvas(QtWidgets.QLabel):
             for y in range(center_y-radius, center_y+radius):
                 if not (0 <= y < HEIGHT):
                     continue
+                if erase:
+                    target_color = self.original_pixmap.toImage().pixelColor(x, y)
                 distance = ((x-center_x)**2 + (y-center_y)**2) ** 0.5
                 if distance > radius:
                     continue
@@ -147,7 +154,7 @@ class Canvas(QtWidgets.QLabel):
                 new_g = int(old_color.green()*(1-strength) + target_color.green()*strength)
                 new_b = int(old_color.blue()*(1-strength) + target_color.blue()*strength)
                 image.setPixelColor(x, y, QtGui.QColor(new_r, new_g, new_b))
-        self.original_pixmap = QtGui.QPixmap.fromImage(image)
+        self.fullsize_pixmap = QtGui.QPixmap.fromImage(image)
         self.updateScaledPixmap()
 
 
