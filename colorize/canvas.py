@@ -1,14 +1,17 @@
 import sys
+import time
+
+import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
-import numpy as np
-import time
+import qimage2ndarray
 
 
 class Canvas(QtWidgets.QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.original_pixmap = QtGui.QPixmap('/Users/v-sopov/projects/hse/colorization/sample_image.png')
+        black_image = qimage2ndarray.array2qimage(np.zeros(shape=(256, 256, 3)))
+        self.original_pixmap = QtGui.QPixmap(black_image)
         self.updateScaledPixmap()
         self.prev_x = None
         self.prev_y = None
@@ -18,7 +21,13 @@ class Canvas(QtWidgets.QLabel):
         self.brush_opacity = 50
         self.brush_hardness = 50
 
-    def getImageCoords(self, event):
+    def reload_pixmap(self, pixmap):
+        if not isinstance(pixmap, QtGui.QPixmap):
+            pixmap = QtGui.QPixmap(pixmap)
+        self.original_pixmap = pixmap
+        self.updateScaledPixmap()
+
+    def get_image_coords(self, event):
         x, y = event.x(), event.y()
         original_size = self.original_pixmap.size()
         original_width = original_size.width()
@@ -36,6 +45,7 @@ class Canvas(QtWidgets.QLabel):
             return None, None
         x = int(x / scaled_width * original_width)
         y = int(y / scaled_height * original_height)
+        print(x, y)
         return x, y
 
     def get_target_color(self):
@@ -50,7 +60,7 @@ class Canvas(QtWidgets.QLabel):
         event_time = time.time()
         if self.prev_event_end_time:
             print('prev_end->new_start: {:.2f} msec'.format((event_time-self.prev_event_end_time)*1000))
-        x, y = self.getImageCoords(e)
+        x, y = self.get_image_coords(e)
         if x is None:
             return
         if self.prev_x is None:
@@ -75,7 +85,7 @@ class Canvas(QtWidgets.QLabel):
         self.prev_event_end_time = event_end_time
 
     def mousePressEvent(self, e):
-        x, y = self.getImageCoords(e)
+        x, y = self.get_image_coords(e)
         if x is None:
             return
         self.draw_point(x, y, self.get_target_color())

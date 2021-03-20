@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="horizontalLayoutWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,7,7">
+   <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,7,0,7">
     <property name="sizeConstraint">
      <enum>QLayout::SetDefaultConstraint</enum>
     </property>
@@ -25,7 +25,7 @@
      <number>10</number>
     </property>
     <property name="rightMargin">
-     <number>0</number>
+     <number>10</number>
     </property>
     <property name="bottomMargin">
      <number>5</number>
@@ -42,14 +42,14 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineEdit">
+         <widget class="QLineEdit" name="raw_folder_input">
           <property name="text">
-           <string>/Users/v-sopov/images/</string>
+           <string/>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QToolButton" name="toolButton">
+         <widget class="QToolButton" name="raw_folder_dialog_button">
           <property name="text">
            <string>...</string>
           </property>
@@ -60,14 +60,14 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0,1,0">
         <item>
-         <widget class="QPushButton" name="pushButton_2">
+         <widget class="QPushButton" name="prev_image_button">
           <property name="text">
            <string>&lt;</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="label_9">
+         <widget class="QLabel" name="current_image_label">
           <property name="text">
            <string>image_sample.png</string>
           </property>
@@ -77,7 +77,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_3">
+         <widget class="QPushButton" name="next_image_button">
           <property name="text">
            <string>&gt;</string>
           </property>
@@ -282,14 +282,14 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineEdit_6">
+         <widget class="QLineEdit" name="save_folder_input">
           <property name="text">
-           <string>/Users/v-sopov/images_colorized/</string>
+           <string/>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QToolButton" name="toolButton_6">
+         <widget class="QToolButton" name="save_folder_dialog_button">
           <property name="text">
            <string>...</string>
           </property>
@@ -330,6 +330,17 @@
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <widget class="QPushButton" name="colorize_button">
+        <property name="text">
+         <string>-&gt;</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item>
      <widget class="Canvas" name="colorized_image">
