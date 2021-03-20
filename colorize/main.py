@@ -34,6 +34,8 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
         # self.select_folder('raw', '/Users/v-sopov/projects/hse/colorization/sample_images')
         # self.colorize()
 
+        self.save_button.pressed.connect(self.save)
+
 
     def brushSliderChanged(self, property_name):
         def slot():
@@ -103,6 +105,18 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
         arr[:, :, 2] -= np.minimum(arr[:, :, 2], 20)
         self.colorized_image.original_pixmap = QtGui.QPixmap(qimage2ndarray.array2qimage(arr))
         self.colorized_image.updateScaledPixmap()
+
+    def save(self):
+        current_image_name = self.raw_images_list[self.current_image_idx]
+        save_folder = self.save_folder_input.text()
+        if not os.path.exists(save_folder):
+            os.makedirs(save_folder)
+
+        save_path = os.path.join(save_folder, current_image_name)
+        image = self.colorized_image.original_pixmap.toImage()
+        image.save(save_path)
+
+
 
 
 def main():
