@@ -69,12 +69,13 @@ class Canvas(QtWidgets.QLabel):
             distance = ((self.prev_x - x)**2 + (self.prev_y - y)**2) ** 0.5
         if distance is not None:
             print('Move distance: {:.1f}'.format(distance))
-        THRESHOLD = self.brush_size / 2
-        if distance is not None and distance >= THRESHOLD:
-            intermediate_points = np.linspace([self.prev_x, self.prev_y], [x, y], int(distance / THRESHOLD)+2).tolist()[1:-1]
-            for inter_x, inter_y in intermediate_points:
-                self.draw_point(int(inter_x), int(inter_y), self.get_target_color())
-        self.draw_point(x, y, self.get_target_color())
+        if self.edit_mode == 'brush':
+            THRESHOLD = self.brush_size / 2
+            if distance is not None and distance >= THRESHOLD:
+                intermediate_points = np.linspace([self.prev_x, self.prev_y], [x, y], int(distance / THRESHOLD)+2).tolist()[1:-1]
+                for inter_x, inter_y in intermediate_points:
+                    self.draw_point(int(inter_x), int(inter_y))
+            self.draw_point(x, y)
 
         self.prev_x = x
         self.prev_y = y
@@ -88,7 +89,7 @@ class Canvas(QtWidgets.QLabel):
         x, y = self.get_image_coords(e)
         if x is None:
             return
-        self.draw_point(x, y, self.get_target_color())
+        self.apply_edit_mode(x, y)
         self.prev_x = x
         self.prev_y = y
         self.update()
@@ -101,7 +102,21 @@ class Canvas(QtWidgets.QLabel):
         self.updateScaledPixmap()
         self.update()
 
-    def draw_point(self, center_x, center_y, target_color):
+    def apply_edit_mode(self, x, y):
+        if self.edit_mode == 'brush':
+            self.draw_point(x, y)
+        elif self.edit_mode == 'colorpicker':
+            self.pick_color(x, y)
+        else:
+            raise RuntimeError('Unknown edit_mode: {}'.format(self.edit_mode))
+
+    def pick_color(self, x, y):
+        image = self.original_pixmap.toImage()
+        new_color = image.pixelColor(x, y)
+        self.parent().parent().palette.get_active_color_widget().set_color(new_color)
+
+    def draw_point(self, center_x, center_y):
+        target_color = self.get_target_color()
         image = self.original_pixmap.toImage()
         WIDTH = image.size().width()
         HEIGHT = image.size().height()

@@ -6,8 +6,8 @@ import time
 
 
 class ColorButton(QtWidgets.QPushButton):
-    def __init__(self, color):
-        super().__init__()
+    def __init__(self, parent, color):
+        super().__init__(parent)
         self.active = False
         self.setFixedSize(QtCore.QSize(24, 24))
         self.set_color(color)
@@ -19,6 +19,7 @@ class ColorButton(QtWidgets.QPushButton):
 
     def set_color(self, color):
         self.color = color
+        self.parent().active_color = self.color
         self.update_style()
 
     def update_style(self):
@@ -55,7 +56,7 @@ class Palette(QtWidgets.QWidget):
             QtGui.QColor(0, 0, 255),
         ]
         colors[1] = QtGui.QColor(0, 0, 0)
-        self.color_buttons = [ColorButton(color) for color in colors]
+        self.color_buttons = [ColorButton(self, color) for color in colors]
         self.color_buttons[0].set_active(True)
         self.active_color = self.color_buttons[0].color
         for button in self.color_buttons:
@@ -65,5 +66,8 @@ class Palette(QtWidgets.QWidget):
         for widget in self.color_buttons:
             widget.set_active(widget == active_widget)
         self.active_color = active_widget.color
+
+    def get_active_color_widget(self):
+        return [x for x in self.color_buttons if x.active][0]
 
         

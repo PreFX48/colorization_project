@@ -10,10 +10,26 @@ import qimage2ndarray
 import form
 
 
+EDIT_MODES = ['brush', 'colorpicker', 'eraser', 'fill']
+
+
 class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+
+        icon_filenames = {
+            x.rsplit('.', 1)[0]: x
+            for x in os.listdir('icons')
+        }
+        for mode in EDIT_MODES:
+            button = getattr(self, f'{mode}_mode_button')
+            print(button.styleSheet())
+            icon = QtGui.QIcon(os.path.join('icons', icon_filenames[mode]))
+            button.setIcon(icon)
+            button.setText('')
+            button.pressed.connect(partial(self.set_edit_mode, mode))
+        self.set_edit_mode('brush')
 
         for property_name in ['size', 'opacity', 'hardness']:
             getattr(self, f'brush_{property_name}_slider').valueChanged.connect(self.brushSliderChanged(property_name))
@@ -115,6 +131,16 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
         save_path = os.path.join(save_folder, current_image_name)
         image = self.colorized_image.original_pixmap.toImage()
         image.save(save_path)
+
+    def set_edit_mode(self, new_mode):
+        for mode in EDIT_MODES:
+            button = getattr(self, f'{mode}_mode_button')
+            if mode != new_mode:
+                button.setStyleSheet('padding: 2px 3px; border: none')
+            else:
+                button.setStyleSheet('padding: 2px 2px; border: 1px solid black')
+        self.raw_image.edit_mode = new_mode
+        self.colorized_image.edit_mode = new_mode
 
 
 
