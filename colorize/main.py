@@ -10,13 +10,14 @@ import qimage2ndarray
 import form
 
 
-EDIT_MODES = ['brush', 'colorpicker', 'eraser', 'fill', 'tip']
+EDIT_MODES = ['brush', 'colorpicker', 'eraser', 'fill', 'tip', 'select']
 
 
 class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.setWindowTitle('Colorize')
 
         icon_filenames = {
             x.rsplit('.', 1)[0]: x

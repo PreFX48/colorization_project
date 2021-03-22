@@ -1,4 +1,5 @@
 from collections import deque
+from itertools import cycle
 import sys
 import time
 
@@ -6,6 +7,8 @@ import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 import qimage2ndarray
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 
 TIP_RECT_SIZE = 6
@@ -15,6 +18,8 @@ class Canvas(QtWidgets.QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tips = {}
+        self.selections = []
+        self.current_selection = []
         black_image = qimage2ndarray.array2qimage(np.zeros(shape=(256, 256, 3)))
         self.original_pixmap = QtGui.QPixmap(black_image)
         self.fullsize_pixmap = self.original_pixmap.copy()
@@ -32,6 +37,9 @@ class Canvas(QtWidgets.QLabel):
             pixmap = QtGui.QPixmap(pixmap)
         self.original_pixmap = pixmap.copy()
         self.fullsize_pixmap = pixmap.copy()
+        self.tips = {}
+        self.selections = []
+        self.current_selection = []
         self.updateScaledPixmap()
 
     def get_image_coords(self, event):
@@ -61,6 +69,8 @@ class Canvas(QtWidgets.QLabel):
         image = self.fullsize_pixmap.toImage()
         WIDTH = image.size().width()
         HEIGHT = image.size().height()
+
+        # Displaying hints
         for (center_x, center_y), color in self.tips.items():
             for x in range(max(0, center_x-TIP_RECT_SIZE), min(WIDTH, center_x+TIP_RECT_SIZE+1)):
                 for y in range(max(0, center_y-TIP_RECT_SIZE), min(HEIGHT, center_y+TIP_RECT_SIZE+1)):
@@ -68,7 +78,46 @@ class Canvas(QtWidgets.QLabel):
                         image.setPixelColor(x, y, QtGui.QColor(0, 0, 0))
                     else:
                         image.setPixelColor(x, y, color)
-        self.scaled_pixmap = QtGui.QPixmap.fromImage(image).scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+
+        pixmap = QtGui.QPixmap.fromImage(image)
+        # Displaying selections
+        selection_colors = sorted([
+            (red, green, blue)
+            for red in [0, 128, 255]
+            for green in [0, 128, 255]
+            for blue in [0, 128, 255]
+            if not (red == 255 and green == 255 and blue == 255)
+            and not (red == 0 and green == 0 and blue == 0)
+        ], key=lambda color: any(channel == 128 for channel in color))  # intermediate colors go last
+        SELECTION_POINT_SIZE = 12
+        painter = QtGui.QPainter(pixmap)
+        color_idx = 0
+        for selection in self.selections:
+            POLYGON_BRUSH = QtGui.QBrush(QtGui.QColor(*selection_colors[color_idx]), QtCore.Qt.BrushStyle.BDiagPattern)
+            LINE_PEN = QtGui.QPen(QtGui.QColor(*selection_colors[color_idx]), 3, QtCore.Qt.PenStyle.DotLine)
+            painter.setBrush(POLYGON_BRUSH)
+            painter.setPen(LINE_PEN)
+            painter.drawPolygon(*[QtCore.QPoint(*point) for point in selection])
+            painter.setPen(QtCore.Qt.PenStyle.SolidLine)
+            painter.setPen(QtGui.QColor(0, 0, 0))
+            painter.setBrush(QtGui.QColor(255, 255, 255))
+            for x, y in selection:
+                painter.drawRect(x-SELECTION_POINT_SIZE//2, y-SELECTION_POINT_SIZE//2, SELECTION_POINT_SIZE, SELECTION_POINT_SIZE)
+            color_idx = (color_idx + 1) % len(selection_colors)
+        # Displaying current unfinished selection
+        LINE_PEN = QtGui.QPen(QtGui.QColor(*selection_colors[color_idx]), 3, QtCore.Qt.PenStyle.DotLine)
+        painter.setBrush(QtCore.Qt.BrushStyle.NoBrush)
+        painter.setPen(LINE_PEN)
+        for start, end in zip(self.current_selection, self.current_selection[1:]):
+            painter.drawLine(QtCore.QPoint(*start), QtCore.QPoint(*end))
+        painter.setPen(QtCore.Qt.PenStyle.SolidLine)
+        painter.setPen(QtGui.QColor(0, 0, 0))
+        painter.setBrush(QtGui.QColor(255, 255, 255))
+        for x, y in self.current_selection:
+            painter.drawRect(x-SELECTION_POINT_SIZE//2, y-SELECTION_POINT_SIZE//2, SELECTION_POINT_SIZE, SELECTION_POINT_SIZE)
+        painter.end()
+
+        self.scaled_pixmap = pixmap.scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self.setPixmap(self.scaled_pixmap)
 
     def mouseMoveEvent(self, e):
@@ -104,7 +153,7 @@ class Canvas(QtWidgets.QLabel):
         x, y = self.get_image_coords(e)
         if x is None:
             return
-        self.apply_edit_mode(x, y)
+        self.apply_edit_mode(x, y, e)
         self.prev_x = x
         self.prev_y = y
         self.update()
@@ -117,7 +166,7 @@ class Canvas(QtWidgets.QLabel):
         self.updateScaledPixmap()
         self.update()
 
-    def apply_edit_mode(self, x, y):
+    def apply_edit_mode(self, x, y, event):
         if self.edit_mode == 'brush':
             self.draw_point(x, y)
         elif self.edit_mode == 'colorpicker':
@@ -128,6 +177,8 @@ class Canvas(QtWidgets.QLabel):
             self.switch_tip(x, y)
         elif self.edit_mode == 'fill':
             self.fill(x, y)
+        elif self.edit_mode == 'select':
+            self.add_selection(x, y, is_right_button=(event.button() == Qt.RightButton))
         else:
             raise RuntimeError('Unknown edit_mode: {}'.format(self.edit_mode))
 
@@ -207,7 +258,7 @@ class Canvas(QtWidgets.QLabel):
 
         def is_point_good(x, y):
             point_color = image.pixelColor(x, y)
-            TOLERANCE = 5
+            TOLERANCE = 10
             if abs(point_color.red() - start_point_color.red()) > TOLERANCE:
                 return False
             if abs(point_color.green() - start_point_color.green()) > TOLERANCE:
@@ -226,26 +277,16 @@ class Canvas(QtWidgets.QLabel):
         self.fullsize_pixmap = QtGui.QPixmap.fromImage(image)
         self.updateScaledPixmap()
 
-
-class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.canvas = Canvas()
-        w = QtWidgets.QWidget()
-        l = QtWidgets.QVBoxLayout()
-        w.setLayout(l)
-        l.addWidget(self.canvas)
-        self.setWindowTitle('Colorize')
-
-        # palette = QtWidgets.QHBoxLayout()
-        # self.add_palette_buttons(palette)
-        # l.addLayout(palette)
-
-        self.setCentralWidget(w)
-
-
-if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    app.exec_()
+    def add_selection(self, x, y, is_right_button):
+        if is_right_button and not self.current_selection:
+            point = Point(x, y)
+            for selection in list(self.selections):
+                polygon = Polygon(selection)
+                if polygon.contains(point):
+                    self.selections.remove(selection)
+        else:
+            self.current_selection.append((x, y))
+            if is_right_button and len(self.current_selection) >= 3:
+                self.selections.append(tuple(self.current_selection))
+                self.current_selection = []
+        self.updateScaledPixmap()

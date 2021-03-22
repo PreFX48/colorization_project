@@ -10,7 +10,7 @@ setup(
     packages=find_packages(),
 
     include_package_data=True,
-    install_requires=['numpy', 'PyQt5', 'qimage2ndarray'],
+    install_requires=['numpy', 'PyQt5', 'qimage2ndarray', 'shapely'],
     entry_points={
         'console_scripts': [
             'colorize = colorize.main:main',
