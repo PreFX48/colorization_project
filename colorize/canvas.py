@@ -1,3 +1,4 @@
+from collections import deque
 import sys
 import time
 
@@ -125,6 +126,8 @@ class Canvas(QtWidgets.QLabel):
             self.draw_point(x, y, erase=True)
         elif self.edit_mode == 'tip':
             self.switch_tip(x, y)
+        elif self.edit_mode == 'fill':
+            self.fill(x, y)
         else:
             raise RuntimeError('Unknown edit_mode: {}'.format(self.edit_mode))
 
@@ -180,6 +183,46 @@ class Canvas(QtWidgets.QLabel):
                 new_g = int(old_color.green()*(1-strength) + target_color.green()*strength)
                 new_b = int(old_color.blue()*(1-strength) + target_color.blue()*strength)
                 image.setPixelColor(x, y, QtGui.QColor(new_r, new_g, new_b))
+        self.fullsize_pixmap = QtGui.QPixmap.fromImage(image)
+        self.updateScaledPixmap()
+
+    def fill(self, x, y):
+        image = self.fullsize_pixmap.toImage()
+        w, h = image.width(), image.height()
+        target_color = self.get_target_color()
+        start_point_color = image.pixelColor(x, y)
+
+        have_seen = set()
+        queue = deque([(x, y)])
+
+        def get_cardinal_points(have_seen, center_pos):
+            points = []
+            cx, cy = center_pos
+            for x, y in [(1, 0), (0, 1), (-1, 0), (0, -1)]:
+                xx, yy = cx + x, cy + y
+                if (xx >= 0 and xx < w and yy >= 0 and yy < h and (xx, yy) not in have_seen):
+                    points.append((xx, yy))
+                    have_seen.add((xx, yy))
+            return points
+
+        def is_point_good(x, y):
+            point_color = image.pixelColor(x, y)
+            TOLERANCE = 5
+            if abs(point_color.red() - start_point_color.red()) > TOLERANCE:
+                return False
+            if abs(point_color.green() - start_point_color.green()) > TOLERANCE:
+                return False
+            if abs(point_color.blue() - start_point_color.blue()) > TOLERANCE:
+                return False
+            return True
+
+        while queue:
+            x, y = queue.popleft()
+            if is_point_good(x, y):
+                image.setPixelColor(x, y, target_color)
+                # Prepend to the queue
+                queue.extend(get_cardinal_points(have_seen, (x, y)))
+
         self.fullsize_pixmap = QtGui.QPixmap.fromImage(image)
         self.updateScaledPixmap()
 
