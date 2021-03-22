@@ -10,7 +10,7 @@ import qimage2ndarray
 import form
 
 
-EDIT_MODES = ['brush', 'colorpicker', 'eraser', 'fill']
+EDIT_MODES = ['brush', 'colorpicker', 'eraser', 'fill', 'tip']
 
 
 class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):

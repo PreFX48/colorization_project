@@ -7,9 +7,13 @@ from PyQt5.QtCore import Qt
 import qimage2ndarray
 
 
+TIP_RECT_SIZE = 6
+
+
 class Canvas(QtWidgets.QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.tips = {}
         black_image = qimage2ndarray.array2qimage(np.zeros(shape=(256, 256, 3)))
         self.original_pixmap = QtGui.QPixmap(black_image)
         self.fullsize_pixmap = self.original_pixmap.copy()
@@ -47,15 +51,23 @@ class Canvas(QtWidgets.QLabel):
             return None, None
         x = int(x / scaled_width * original_width)
         y = int(y / scaled_height * original_height)
-        print(x, y)
         return x, y
 
     def get_target_color(self):
         return self.parent().parent().palette.active_color
 
     def updateScaledPixmap(self):
-        # TODO: fix disappearance of all drawings after window resize
-        self.scaled_pixmap = self.fullsize_pixmap.scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        image = self.fullsize_pixmap.toImage()
+        WIDTH = image.size().width()
+        HEIGHT = image.size().height()
+        for (center_x, center_y), color in self.tips.items():
+            for x in range(max(0, center_x-TIP_RECT_SIZE), min(WIDTH, center_x+TIP_RECT_SIZE+1)):
+                for y in range(max(0, center_y-TIP_RECT_SIZE), min(HEIGHT, center_y+TIP_RECT_SIZE+1)):
+                    if x == center_x-TIP_RECT_SIZE or x == center_x+TIP_RECT_SIZE or y == center_y-TIP_RECT_SIZE or y == center_y+TIP_RECT_SIZE:
+                        image.setPixelColor(x, y, QtGui.QColor(0, 0, 0))
+                    else:
+                        image.setPixelColor(x, y, color)
+        self.scaled_pixmap = QtGui.QPixmap.fromImage(image).scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self.setPixmap(self.scaled_pixmap)
 
     def mouseMoveEvent(self, e):
@@ -111,8 +123,22 @@ class Canvas(QtWidgets.QLabel):
             self.pick_color(x, y)
         elif self.edit_mode == 'eraser':
             self.draw_point(x, y, erase=True)
+        elif self.edit_mode == 'tip':
+            self.switch_tip(x, y)
         else:
             raise RuntimeError('Unknown edit_mode: {}'.format(self.edit_mode))
+
+    def switch_tip(self, center_x, center_y):
+        intersecting_tips = [
+            (x, y) for (x, y) in self.tips
+            if (x - TIP_RECT_SIZE <= center_x <= x + TIP_RECT_SIZE) and (y - TIP_RECT_SIZE <= center_y <= y + TIP_RECT_SIZE)
+        ]
+        if intersecting_tips:
+            for tip in intersecting_tips:
+                del self.tips[tip]
+        else:
+            self.tips[(center_x, center_y)] = self.get_target_color()
+        self.updateScaledPixmap()
 
     def pick_color(self, x, y):
         image = self.fullsize_pixmap.toImage()

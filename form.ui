@@ -103,7 +103,7 @@
            </widget>
           </item>
           <item row="0" column="2">
-           <widget class="QPushButton" name="pushButton_6">
+           <widget class="QPushButton" name="tip_mode_button">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -111,13 +111,13 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>C</string>
+             <string>Tip</string>
             </property>
             <property name="checkable">
              <bool>false</bool>
             </property>
             <property name="flat">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
            </widget>
           </item>
