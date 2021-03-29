@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt
 import qimage2ndarray
 
 import form
+from dl.colorizator import MangaColorizator
 
 
 EDIT_MODES = ['brush', 'colorpicker', 'eraser', 'fill', 'tip', 'select']
@@ -52,6 +53,8 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
         # self.colorize()
 
         self.save_button.pressed.connect(self.save)
+
+        self.colorizer = MangaColorizator('cpu', generator_path='weights/networks/generator.zip', extractor_path='weights/networks/extractor.pth')
 
 
     def brushSliderChanged(self, property_name):
@@ -116,10 +119,19 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
             self.raw_image.reload_pixmap(os.path.join(self.raw_folder_input.text(), current_image))
             self.colorized_image.reload_pixmap(QtGui.QPixmap(qimage2ndarray.array2qimage(np.zeros(shape=(256, 256, 3)))))
 
+    def prepare_hints_mask(self):
+        pass  # TODO
+
+
     def colorize(self):
         arr = qimage2ndarray.rgb_view(self.raw_image.fullsize_pixmap.toImage(), byteorder='big').copy()
-        arr[:, :, 0] -= np.minimum(arr[:, :, 0], 20)
-        arr[:, :, 2] -= np.minimum(arr[:, :, 2], 20)
+        # arr[:, :, 0] -= np.minimum(arr[:, :, 0], 20)  # for testing purposes
+        # arr[:, :, 2] -= np.minimum(arr[:, :, 2], 20)  # for testing purposes
+        arr = arr.astype('float32') / 255.0
+        self.colorizer.set_image(arr)
+        # self.colorizer.update_hint(*self.prepare_hints_mask())  # TODO
+        arr = self.colorizer.colorize()
+        arr = (arr * 255.0).astype('uint8')
         self.colorized_image.reload_pixmap(QtGui.QPixmap(qimage2ndarray.array2qimage(arr)))
 
     def save(self):
