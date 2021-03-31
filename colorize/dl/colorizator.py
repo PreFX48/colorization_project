@@ -28,7 +28,7 @@ class MangaColorizator:
         if apply_denoise:
             image = self.denoiser.get_denoised_image(image, sigma = denoise_sigma)
         
-        image, self.current_pad = resize_pad(image, size)
+        image, self.current_pad = resize_pad(image, size, enforce_greyscale=True)
         self.current_image = transform(image).unsqueeze(0).to(self.device)
         self.current_hint = torch.zeros(1, 4, self.current_image.shape[2], self.current_image.shape[3]).float().to(self.device)
     
@@ -38,12 +38,14 @@ class MangaColorizator:
            hint: numpy.ndarray with shape (self.current_image.shape[2], self.current_image.shape[3], 3)
            mask: numpy.ndarray with shape (self.current_image.shape[2], self.current_image.shape[3])
         '''
-        
         if issubclass(hint.dtype.type, np.integer):
             hint = hint.astype('float32') / 255
-            
+
         hint = (hint - 0.5) / 0.5
         hint = torch.FloatTensor(hint).permute(2, 0, 1)
+        if len(mask.shape) == 3:
+            assert mask.shape[2] == 1
+            mask = mask[:, :, 0]
         mask = torch.FloatTensor(np.expand_dims(mask, 0))
 
         self.current_hint = torch.cat([hint * mask, mask], 0).unsqueeze(0).to(self.device)

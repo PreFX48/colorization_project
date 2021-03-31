@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1200</width>
+    <width>1300</width>
     <height>800</height>
    </rect>
   </property>
@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="horizontalLayoutWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,7,0,7">
+   <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,7,0,7">
     <property name="sizeConstraint">
      <enum>QLayout::SetDefaultConstraint</enum>
     </property>

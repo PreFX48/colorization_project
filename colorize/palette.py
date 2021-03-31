@@ -51,9 +51,9 @@ class Palette(QtWidgets.QWidget):
         colors = [
             QtGui.QColor(255, 255, 255),
             QtGui.QColor(0, 0, 0),
-            QtGui.QColor(255, 0, 0),
-            QtGui.QColor(0, 255, 0),
-            QtGui.QColor(0, 0, 255),
+            QtGui.QColor(237, 190, 164),
+            QtGui.QColor(190, 237, 164),
+            QtGui.QColor(164, 190, 237),
         ]
         colors[1] = QtGui.QColor(0, 0, 0)
         self.color_buttons = [ColorButton(self, color) for color in colors]

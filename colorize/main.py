@@ -2,16 +2,71 @@ from functools import partial
 import os
 import sys
 
+import cv2
 import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 import qimage2ndarray
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 import form
 from dl.colorizator import MangaColorizator
+from dl.utils.utils import resize_pad 
 
 
 EDIT_MODES = ['brush', 'colorpicker', 'eraser', 'fill', 'tip', 'select']
+
+
+class ColorizerWorker(QtCore.QObject):
+    finished = QtCore.pyqtSignal()
+    progress = QtCore.pyqtSignal(str)
+
+    def __init__(self, window, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.window = window
+
+    def prepare_hints_mask(self, img_arr):
+        color_map = np.full((img_arr.shape[0], img_arr.shape[1], 3), 0.5)
+        mask = np.zeros(shape=(img_arr.shape[:2]))
+        HINT_RADIUS = 1
+        for (x, y), color in self.window.raw_image.tips.items():
+            print(f'({x}, {y}): r={color.red()}, g={color.green()}, b={color.blue()}')
+            for x_ in range(max(0, x-HINT_RADIUS), min(color_map.shape[1], x+HINT_RADIUS+1)):
+                for y_ in range(max(0, y-HINT_RADIUS), min(color_map.shape[0], y+HINT_RADIUS+1)):
+                    color_map[y_, x_, 0] = color.red() / 255.0
+                    color_map[y_, x_, 1] = color.green() / 255.0
+                    color_map[y_, x_, 2] = color.blue() / 255.0
+                    mask[y_, x_] = 1.0
+
+        if self.window.raw_image.tips:
+            print(f'DEFAULT=({color_map[0][0][0]},{color_map[0][0][1]},{color_map[0][0][2]})')
+            print(f'HINT=({color_map[y][x][0]:.2f},{color_map[y][x][1]:.2f},{color_map[y][x][2]:.2f})')
+
+        color_map = resize_pad(color_map, 576)[0]
+        from matplotlib import pyplot as plt
+        plt.imsave('hint_map.png', color_map)
+        mask = resize_pad(mask, 576, enforce_rgb=False)[0]
+        plt.imsave('mask.png', np.minimum(np.concatenate([mask]*3, axis=2), 1.0))
+        return color_map, mask
+
+    def run(self):
+        self.progress.emit('Preparing input')
+        arr = qimage2ndarray.rgb_view(self.window.raw_image.fullsize_pixmap.toImage(), byteorder='big').copy()
+        # arr[:, :, 0] -= np.minimum(arr[:, :, 0], 20)  # for testing purposes
+        # arr[:, :, 2] -= np.minimum(arr[:, :, 2], 20)  # for testing purposes
+        arr = arr.astype('float32') / 255.0
+        arr = cv2.cvtColor(arr, cv2.COLOR_BGR2GRAY)
+        self.window.colorizer.set_image(arr)
+        self.window.colorizer.update_hint(*self.prepare_hints_mask(arr))
+        self.progress.emit('Running colorization')
+        arr = self.window.colorizer.colorize()
+        arr = (arr * 255.0).astype('uint8')
+        self.window.colorized_image.reload_pixmap(QtGui.QPixmap(qimage2ndarray.array2qimage(arr)))
+        self.finished.emit()
+
+
+
 
 
 class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
@@ -26,12 +81,11 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
         }
         for mode in EDIT_MODES:
             button = getattr(self, f'{mode}_mode_button')
-            print(button.styleSheet())
             icon = QtGui.QIcon(os.path.join('icons', icon_filenames[mode]))
             button.setIcon(icon)
             button.setText('')
             button.pressed.connect(partial(self.set_edit_mode, mode))
-        self.set_edit_mode('brush')
+        self.set_edit_mode('tip')
 
         for property_name in ['size', 'opacity', 'hardness']:
             getattr(self, f'brush_{property_name}_slider').valueChanged.connect(self.brushSliderChanged(property_name))
@@ -49,12 +103,13 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
 
         self.colorize_button.pressed.connect(self.colorize)
         # For testing purposes
-        # self.select_folder('raw', '/Users/v-sopov/projects/hse/colorization/sample_images')
+        self.select_folder('raw', '/Users/v-sopov/projects/hse/colorization/sample_images')
         # self.colorize()
 
         self.save_button.pressed.connect(self.save)
 
-        self.colorizer = MangaColorizator('cpu', generator_path='weights/networks/generator.zip', extractor_path='weights/networks/extractor.pth')
+        self.colorizer = MangaColorizator('cpu', generator_path='weights/networks/generator1.zip', extractor_path='weights/networks/extractor.pth')
+        # self.colorize()
 
 
     def brushSliderChanged(self, property_name):
@@ -119,20 +174,23 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
             self.raw_image.reload_pixmap(os.path.join(self.raw_folder_input.text(), current_image))
             self.colorized_image.reload_pixmap(QtGui.QPixmap(qimage2ndarray.array2qimage(np.zeros(shape=(256, 256, 3)))))
 
-    def prepare_hints_mask(self):
-        pass  # TODO
-
-
     def colorize(self):
-        arr = qimage2ndarray.rgb_view(self.raw_image.fullsize_pixmap.toImage(), byteorder='big').copy()
-        # arr[:, :, 0] -= np.minimum(arr[:, :, 0], 20)  # for testing purposes
-        # arr[:, :, 2] -= np.minimum(arr[:, :, 2], 20)  # for testing purposes
-        arr = arr.astype('float32') / 255.0
-        self.colorizer.set_image(arr)
-        # self.colorizer.update_hint(*self.prepare_hints_mask())  # TODO
-        arr = self.colorizer.colorize()
-        arr = (arr * 255.0).astype('uint8')
-        self.colorized_image.reload_pixmap(QtGui.QPixmap(qimage2ndarray.array2qimage(arr)))
+        self.colorization_thread = QtCore.QThread()
+        self.colorization_worker = ColorizerWorker(self)
+        self.colorization_worker.moveToThread(self.colorization_thread)
+        self.colorization_thread.started.connect(self.colorization_worker.run)
+        self.colorization_worker.finished.connect(self.colorization_thread.quit)
+        self.colorization_worker.finished.connect(self.colorization_worker.deleteLater)
+        self.colorization_thread.finished.connect(self.colorization_thread.deleteLater)
+        self.colorization_worker.progress.connect(self.reportColorizationProgress)
+        self.colorize_button.setEnabled(False)
+        self.colorization_thread.finished.connect(
+            lambda: self.colorize_button.setEnabled(True)
+        )
+        self.colorization_thread.start()
+
+    def reportColorizationProgress(self):
+        pass  # TODO
 
     def save(self):
         current_image_name = self.raw_images_list[self.current_image_idx]

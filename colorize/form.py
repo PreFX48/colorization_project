@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1200, 800)
+        MainWindow.resize(1300, 800)
         self.horizontalLayoutWidget = QtWidgets.QWidget(MainWindow)
         self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
@@ -216,7 +216,7 @@ class Ui_MainWindow(object):
         self.colorized_image.setAlignment(QtCore.Qt.AlignCenter)
         self.colorized_image.setObjectName("colorized_image")
         self.horizontalLayout.addWidget(self.colorized_image)
-        self.horizontalLayout.setStretch(0, 5)
+        self.horizontalLayout.setStretch(0, 2)
         self.horizontalLayout.setStretch(1, 7)
         self.horizontalLayout.setStretch(3, 7)
         MainWindow.setCentralWidget(self.horizontalLayoutWidget)
