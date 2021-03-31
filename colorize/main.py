@@ -40,10 +40,10 @@ class ColorizerWorker(QtCore.QObject):
 
         color_map = resize_pad(color_map, 576, interpolation=cv2.INTER_NEAREST)[0]
 
-        from matplotlib import pyplot as plt
-        plt.imsave('hint_map.png', color_map)
+        # from matplotlib import pyplot as plt
+        # plt.imsave('hint_map.png', color_map)
         mask = resize_pad(mask, 576, enforce_rgb=False, interpolation=cv2.INTER_NEAREST)[0]
-        plt.imsave('mask.png', np.minimum(np.concatenate([mask]*3, axis=2), 1.0))
+        # plt.imsave('mask.png', np.minimum(np.concatenate([mask]*3, axis=2), 1.0))
 
         return color_map, mask
 
@@ -100,16 +100,12 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
 
         self.colorize_button.pressed.connect(self.colorize)
         # For testing purposes
-        self.select_folder('raw', '/Users/v-sopov/projects/hse/colorization/sample_images')
-        # self.colorize()
+        # self.select_folder('raw', '/Users/v-sopov/projects/hse/colorization/sample_images')
 
         self.save_button.pressed.connect(self.save)
 
         self.colorizer = MangaColorizator('cpu', generator_path='weights/networks/generator1.zip', extractor_path='weights/networks/extractor.pth')
-        # self.raw_image.tips[(120, 150)] = QtGui.QColor(int(0.99*255), int(0.90*255), int(0.81*255))  # TODO: remove
-        self.raw_image.tips[(167, 208)] = QtGui.QColor(int(0.99*255), int(0.90*255), int(0.81*255))  # TODO: remove
-        self.raw_image.updateScaledPixmap()
-        self.colorize()
+        # self.colorize()
 
 
     def brushSliderChanged(self, property_name):
@@ -119,7 +115,7 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
             canvas_property_name = f'brush_{property_name}'
             input_widget.setText(str(slider_widget.value()))
             setattr(self.raw_image, canvas_property_name, slider_widget.value())
-            # TODO: colorized image
+            setattr(self.colorized_image, canvas_property_name, slider_widget.value())
         return slot
 
     def brushInputChanged(self, property_name):
@@ -131,7 +127,7 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
             canvas_property_name = f'brush_{property_name}'
             slider_widget.setValue(new_value)
             setattr(self.raw_image, canvas_property_name, new_value)
-            # TODO: colorized image
+            setattr(self.colorized_image, canvas_property_name, new_value)
         return slot
 
     def select_folder(self, destination, folder=None):
