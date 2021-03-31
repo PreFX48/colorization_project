@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-def resize_pad(img, size=256, enforce_rgb=True, enforce_greyscale=False):
+def resize_pad(img, size=256, enforce_rgb=True, enforce_greyscale=False, interpolation=cv2.INTER_AREA):
     is_greyscale = len(img.shape) == 2 or img.shape[2] == 1
             
     if len(img.shape) == 2:
@@ -20,7 +20,7 @@ def resize_pad(img, size=256, enforce_rgb=True, enforce_greyscale=False):
         ratio = height / (size * 1.5)
         width = int(np.ceil(img.shape[1] / ratio))
         original_shape = img.shape
-        img = cv2.resize(img, (width, int(size * 1.5)), interpolation = cv2.INTER_AREA)
+        img = cv2.resize(img, (width, int(size * 1.5)), interpolation = interpolation)
         if len(original_shape) > len(img.shape):
             img = img[:, :, np.newaxis]
 
@@ -34,7 +34,7 @@ def resize_pad(img, size=256, enforce_rgb=True, enforce_greyscale=False):
         ratio = width / size
         height = int(np.ceil(img.shape[0] / ratio))
         original_shape = img.shape
-        img = cv2.resize(img, (size, height), interpolation = cv2.INTER_AREA)
+        img = cv2.resize(img, (size, height), interpolation = interpolation)
         if len(original_shape) > len(img.shape):
             img = img[:, :, np.newaxis]
 

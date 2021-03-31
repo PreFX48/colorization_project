@@ -29,9 +29,8 @@ class ColorizerWorker(QtCore.QObject):
     def prepare_hints_mask(self, img_arr):
         color_map = np.full((img_arr.shape[0], img_arr.shape[1], 3), 0.5)
         mask = np.zeros(shape=(img_arr.shape[:2]))
-        HINT_RADIUS = 1
+        HINT_RADIUS = 0
         for (x, y), color in self.window.raw_image.tips.items():
-            print(f'({x}, {y}): r={color.red()}, g={color.green()}, b={color.blue()}')
             for x_ in range(max(0, x-HINT_RADIUS), min(color_map.shape[1], x+HINT_RADIUS+1)):
                 for y_ in range(max(0, y-HINT_RADIUS), min(color_map.shape[0], y+HINT_RADIUS+1)):
                     color_map[y_, x_, 0] = color.red() / 255.0
@@ -39,15 +38,13 @@ class ColorizerWorker(QtCore.QObject):
                     color_map[y_, x_, 2] = color.blue() / 255.0
                     mask[y_, x_] = 1.0
 
-        if self.window.raw_image.tips:
-            print(f'DEFAULT=({color_map[0][0][0]},{color_map[0][0][1]},{color_map[0][0][2]})')
-            print(f'HINT=({color_map[y][x][0]:.2f},{color_map[y][x][1]:.2f},{color_map[y][x][2]:.2f})')
+        color_map = resize_pad(color_map, 576, interpolation=cv2.INTER_NEAREST)[0]
 
-        color_map = resize_pad(color_map, 576)[0]
         from matplotlib import pyplot as plt
         plt.imsave('hint_map.png', color_map)
-        mask = resize_pad(mask, 576, enforce_rgb=False)[0]
+        mask = resize_pad(mask, 576, enforce_rgb=False, interpolation=cv2.INTER_NEAREST)[0]
         plt.imsave('mask.png', np.minimum(np.concatenate([mask]*3, axis=2), 1.0))
+
         return color_map, mask
 
     def run(self):
@@ -63,10 +60,8 @@ class ColorizerWorker(QtCore.QObject):
         arr = self.window.colorizer.colorize()
         arr = (arr * 255.0).astype('uint8')
         self.window.colorized_image.reload_pixmap(QtGui.QPixmap(qimage2ndarray.array2qimage(arr)))
+        self.progress.emit('')
         self.finished.emit()
-
-
-
 
 
 class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
@@ -74,6 +69,8 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
         self.setWindowTitle('Colorize')
+
+        self.colorization_progress_label.setText('')
 
         icon_filenames = {
             x.rsplit('.', 1)[0]: x
@@ -109,7 +106,10 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
         self.save_button.pressed.connect(self.save)
 
         self.colorizer = MangaColorizator('cpu', generator_path='weights/networks/generator1.zip', extractor_path='weights/networks/extractor.pth')
-        # self.colorize()
+        # self.raw_image.tips[(120, 150)] = QtGui.QColor(int(0.99*255), int(0.90*255), int(0.81*255))  # TODO: remove
+        self.raw_image.tips[(167, 208)] = QtGui.QColor(int(0.99*255), int(0.90*255), int(0.81*255))  # TODO: remove
+        self.raw_image.updateScaledPixmap()
+        self.colorize()
 
 
     def brushSliderChanged(self, property_name):
@@ -189,8 +189,8 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
         )
         self.colorization_thread.start()
 
-    def reportColorizationProgress(self):
-        pass  # TODO
+    def reportColorizationProgress(self, new_text):
+        self.colorization_progress_label.setText(new_text)
 
     def save(self):
         current_image_name = self.raw_images_list[self.current_image_idx]
