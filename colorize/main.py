@@ -27,22 +27,39 @@ class ColorizerWorker(QtCore.QObject):
         self.window = window
 
     def prepare_hints_mask(self, img_arr):
-        color_map = np.full((img_arr.shape[0], img_arr.shape[1], 3), 0.5)
-        mask = np.zeros(shape=(img_arr.shape[:2]))
+        size = 576
+        if (img_arr.shape[0] < img_arr.shape[1]):
+            ratio = img_arr.shape[0] / (size * 1.5)
+            height = int(size*1.5)
+            width = int(np.ceil(img_arr.shape[1] / ratio))
+            padding = ((0, 0), (0, 32-width%32), (0, 0))
+        else:
+            ratio = img_arr.shape[1] / size
+            height = int(np.ceil(img_arr.shape[0] / ratio))
+            width = size
+            padding = ((0, 32-height%32), (0, 0), (0, 0))
+        
+        height_ratio = height / img_arr.shape[0]
+        width_ratio = width / img_arr.shape[1]
+
+        color_map = np.full((height, width, 3), 0.5)
+        mask = np.zeros(shape=(height, width, 1))
         HINT_RADIUS = 0
-        for (x, y), color in self.window.raw_image.tips.items():
+        for (unscaled_x, unscaled_y), color in self.window.raw_image.tips.items():
+            x = int(unscaled_x * width_ratio)
+            y = int(unscaled_y * height_ratio)
             for x_ in range(max(0, x-HINT_RADIUS), min(color_map.shape[1], x+HINT_RADIUS+1)):
                 for y_ in range(max(0, y-HINT_RADIUS), min(color_map.shape[0], y+HINT_RADIUS+1)):
                     color_map[y_, x_, 0] = color.red() / 255.0
                     color_map[y_, x_, 1] = color.green() / 255.0
                     color_map[y_, x_, 2] = color.blue() / 255.0
-                    mask[y_, x_] = 1.0
+                    mask[y_, x_, 0] = 1.0
 
-        color_map = resize_pad(color_map, 576, interpolation=cv2.INTER_NEAREST)[0]
+        color_map = np.pad(color_map, padding, 'edge')
+        mask = np.pad(mask, padding, 'edge')
 
         # from matplotlib import pyplot as plt
         # plt.imsave('hint_map.png', color_map)
-        mask = resize_pad(mask, 576, enforce_rgb=False, interpolation=cv2.INTER_NEAREST)[0]
         # plt.imsave('mask.png', np.minimum(np.concatenate([mask]*3, axis=2), 1.0))
 
         return color_map, mask
