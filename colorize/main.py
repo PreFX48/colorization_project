@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt
 import qimage2ndarray
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
+import torch
 
 import form
 from dl.colorizator import MangaColorizator
@@ -121,7 +122,12 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
 
         self.save_button.pressed.connect(self.save)
 
-        self.colorizer = MangaColorizator('cpu', generator_path='weights/networks/generator1.zip', extractor_path='weights/networks/extractor.pth')
+        compute_device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.colorizer = MangaColorizator(
+            compute_device,
+            generator_path='weights/networks/generator1.zip',
+            extractor_path='weights/networks/extractor.pth'
+        )
         # self.colorize()
 
 
