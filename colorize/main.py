@@ -95,6 +95,8 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
             for x in os.listdir('icons')
         }
         for mode in EDIT_MODES:
+            if mode == 'select':
+                continue  # For now it is useless
             button = getattr(self, f'{mode}_mode_button')
             icon = QtGui.QIcon(os.path.join('icons', icon_filenames[mode]))
             button.setIcon(icon)
@@ -116,6 +118,9 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
         self.prev_image_button.pressed.connect(self.select_prev_image)
         self.next_image_button.pressed.connect(self.select_next_image)
 
+        icon = QtGui.QIcon(os.path.join('icons', 'right_arrow.png'))
+        self.colorize_button.setIcon(icon)
+        self.colorize_button.setText('')
         self.colorize_button.pressed.connect(self.colorize)
         # For testing purposes
         # self.select_folder('raw', '/Users/v-sopov/projects/hse/colorization/sample_images')
@@ -209,7 +214,8 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
         self.colorization_thread.start()
 
     def reportColorizationProgress(self, new_text):
-        self.colorization_progress_label.setText(new_text)
+        # self.colorization_progress_label.setText(new_text)
+        self.colorized_image.setText(new_text)
 
     def save(self):
         current_image_name = self.raw_images_list[self.current_image_idx]

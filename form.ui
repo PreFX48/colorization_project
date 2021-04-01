@@ -15,6 +15,9 @@
   </property>
   <widget class="QWidget" name="horizontalLayoutWidget">
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,7,0,7">
+    <property name="spacing">
+     <number>0</number>
+    </property>
     <property name="sizeConstraint">
      <enum>QLayout::SetDefaultConstraint</enum>
     </property>
@@ -32,8 +35,14 @@
     </property>
     <item>
      <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0,0,0,0,0">
+      <property name="spacing">
+       <number>10</number>
+      </property>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <property name="spacing">
+         <number>10</number>
+        </property>
         <item>
          <widget class="QLabel" name="label_3">
           <property name="text">
@@ -43,6 +52,11 @@
         </item>
         <item>
          <widget class="QLineEdit" name="raw_folder_input">
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string/>
           </property>
@@ -59,6 +73,9 @@
       </item>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0,1,0">
+        <property name="spacing">
+         <number>10</number>
+        </property>
         <item>
          <widget class="QPushButton" name="prev_image_button">
           <property name="text">
@@ -69,7 +86,7 @@
         <item>
          <widget class="QLabel" name="current_image_label">
           <property name="text">
-           <string>image_sample.png</string>
+           <string>SELECT FOLDER</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -87,8 +104,14 @@
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="spacing">
+         <number>10</number>
+        </property>
         <item>
          <layout class="QGridLayout" name="gridLayout">
+          <property name="spacing">
+           <number>10</number>
+          </property>
           <item row="0" column="1">
            <widget class="QPushButton" name="colorpicker_mode_button">
             <property name="sizePolicy">
@@ -99,6 +122,19 @@
             </property>
             <property name="text">
              <string>CP</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="brush_mode_button">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Br</string>
             </property>
            </widget>
           </item>
@@ -134,61 +170,6 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="3">
-           <widget class="QPushButton" name="pushButton_5">
-            <property name="text">
-             <string>H</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QPushButton" name="select_mode_button">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Sel</string>
-            </property>
-            <property name="flat">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="3">
-           <widget class="QPushButton" name="pushButton_4">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>D</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QPushButton" name="brush_mode_button">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Br</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="0">
            <widget class="QPushButton" name="eraser_mode_button">
             <property name="sizePolicy">
@@ -199,6 +180,25 @@
             </property>
             <property name="text">
              <string>Eras</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QPushButton" name="select_mode_button">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -218,8 +218,23 @@
       </item>
       <item>
        <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,0" columnstretch="0,1,0" columnminimumwidth="0,100,0">
+        <property name="spacing">
+         <number>10</number>
+        </property>
         <item row="1" column="2">
          <widget class="QLineEdit" name="brush_opacity_input">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>25</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="text">
            <string>100</string>
           </property>
@@ -256,6 +271,18 @@
         </item>
         <item row="2" column="2">
          <widget class="QLineEdit" name="brush_hardness_input">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>25</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="text">
            <string>90</string>
           </property>
@@ -309,6 +336,18 @@
         </item>
         <item row="0" column="2">
          <widget class="QLineEdit" name="brush_size_input">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>25</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="text">
            <string>10</string>
           </property>
@@ -341,15 +380,19 @@
       </item>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_7">
-        <item>
-         <widget class="QLabel" name="label_8">
-          <property name="text">
-           <string>Folder</string>
-          </property>
-         </widget>
-        </item>
+        <property name="spacing">
+         <number>10</number>
+        </property>
         <item>
          <widget class="QLineEdit" name="save_folder_input">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string/>
           </property>
@@ -400,10 +443,37 @@
     </item>
     <item>
      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <property name="spacing">
+       <number>10</number>
+      </property>
       <item>
        <widget class="QPushButton" name="colorize_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>40</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="text">
          <string>-&gt;</string>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
         </property>
        </widget>
       </item>
