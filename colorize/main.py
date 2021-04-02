@@ -27,8 +27,7 @@ class ColorizerWorker(QtCore.QObject):
         super().__init__(*args, **kwargs)
         self.window = window
 
-    def prepare_hints_mask(self, img_arr):
-        size = 576
+    def prepare_hints_mask(self, img_arr, size):
         if (img_arr.shape[0] < img_arr.shape[1]):
             ratio = img_arr.shape[0] / (size * 1.5)
             height = int(size*1.5)
@@ -72,8 +71,9 @@ class ColorizerWorker(QtCore.QObject):
         # arr[:, :, 2] -= np.minimum(arr[:, :, 2], 20)  # for testing purposes
         arr = arr.astype('float32') / 255.0
         arr = cv2.cvtColor(arr, cv2.COLOR_BGR2GRAY)
-        self.window.colorizer.set_image(arr)
-        self.window.colorizer.update_hint(*self.prepare_hints_mask(arr))
+        target_size = self.window.image_size
+        self.window.colorizer.set_image(arr, size=target_size)
+        self.window.colorizer.update_hint(*self.prepare_hints_mask(arr, size=target_size))
         self.progress.emit('Running colorization')
         arr = self.window.colorizer.colorize()
         arr = (arr * 255.0).astype('uint8')
@@ -110,6 +110,11 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
             getattr(self, f'brush_{property_name}_input').setValidator(QtGui.QIntValidator(0, 100))
             getattr(self, f'brush_{property_name}_slider').setValue(getattr(self.raw_image, f'brush_{property_name}'))
             getattr(self, f'brush_{property_name}_input').setText(str(getattr(self.raw_image, f'brush_{property_name}')))
+
+        self.image_size_slider.valueChanged.connect(self.imageSizeSliderChanged)
+        self.image_size_slider.setValue(576//64)
+        self.image_size_value.setText('576')
+        self.image_size = 576
 
         self.raw_folder_dialog_button.pressed.connect(partial(self.select_folder, 'raw'))
         self.save_folder_dialog_button.pressed.connect(partial(self.select_folder, 'save'))
@@ -157,6 +162,11 @@ class MainWindow(QtWidgets.QMainWindow, form.Ui_MainWindow):
             setattr(self.raw_image, canvas_property_name, new_value)
             setattr(self.colorized_image, canvas_property_name, new_value)
         return slot
+
+    def imageSizeSliderChanged(self):
+        value = self.image_size_slider.value() * 64
+        self.image_size_value.setText(str(value))
+        self.image_size = value
 
     def select_folder(self, destination, folder=None):
         if folder is None:
